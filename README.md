@@ -1,5 +1,12 @@
-# meteor-detect
+# meteor-detect(fork版)
 
+https://github.com/kin-hasegawa　氏のmeteor-detectをforkさせていただいております  
+自身の自宅観測カメラ用に必要な改変を加えているのみです  
+  
+originalはhttps://github.com/kin-hasegawa/meteor-detectです。  
+  
+---
+  
 ATOMCamのストリーミング及びデータからの流星を自動検出<br>
 Automatic meteor detection from movie files(MP4) and streaming devices(RTSP)
 
