@@ -424,8 +424,6 @@ class AtomCam:
                         print('{} {} A possible meteor was detected.'.format(obs_time, meteor_candidate))
                     '''
                     print('{} A possible meteor was detected.'.format(obs_time))
-                    for d in detected:
-                        cv2.rectangle(self.composite_img, (d[0][0],d[0][1]), (d[0][2],d[0][3]), (0, 0, 255), 3) 
                     filename = "{:04}{:02}{:02}{:02}{:02}{:02}".format(
                         now.year, now.month, now.day, now.hour, now.minute, now.second)
                     path_name = str(Path(self.output_dir, filename + ".jpg"))
