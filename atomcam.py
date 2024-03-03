@@ -26,7 +26,7 @@ import traceback
 sys.stdout.reconfigure(line_buffering=True)
 
 # 自分の環境のATOM CamのIPに修正してください。
-ATOM_CAM_IP = os.environ.get("ATOM_CAM_IP", "192.168.2.110")
+ATOM_CAM_IP = os.environ.get("ATOM_CAM_IP", "192.168.100.13")
 ATOM_CAM_RTSP = "rtsp://{}:8554/unicast".format(ATOM_CAM_IP)
 
 # atomcam_toolsでのデフォルトのユーザアカウントなので、自分の環境に合わせて変更してください。
@@ -424,6 +424,8 @@ class AtomCam:
                         print('{} {} A possible meteor was detected.'.format(obs_time, meteor_candidate))
                     '''
                     print('{} A possible meteor was detected.'.format(obs_time))
+                    for d in detected:
+                        cv2.rectangle(self.composite_img, (d[0][0],d[0][1]), (d[0][2],d[0][3]), (0, 0, 255), 3) 
                     filename = "{:04}{:02}{:02}{:02}{:02}{:02}".format(
                         now.year, now.month, now.day, now.hour, now.minute, now.second)
                     path_name = str(Path(self.output_dir, filename + ".jpg"))
@@ -558,7 +560,8 @@ class DetectMeteor():
             if number > 2:
                 try:
                     diff_img = brightest(diff(img_list, self.mask))
-                    if detect(diff_img, self.min_length) is not None:
+                    detect_list = detect(diff_img, self.min_length) 
+                    if detect_list is not None:
                         obs_time = "{}:{}".format(
                             self.obs_time, str(count*exposure).zfill(2))
                         print('{}  A possible meteor was detected.'.format(obs_time))
@@ -567,6 +570,8 @@ class DetectMeteor():
                         path_name = str(Path(output_dir, filename + ".jpg"))
                         # cv2.imwrite(filename + ".jpg", diff_img)
                         composite_img = brightest(img_list)
+                        for d in detect_list:
+                            cv2.rectangle(composite_img, (d[0][0],d[0][1]), (d[0][2],d[0][3]), (0, 0, 255), 3) 
                         cv2.imwrite(path_name, composite_img)
 
                         # 検出した動画を保存する。

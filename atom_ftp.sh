@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 下記の接続情報を自分の環境に合わせて修正してください。
-ATOMCAM_IP='192.168.2.110'
+# 環境変数側でSET ATOMCAM_IP='192.168.2.110'
 ATOMCAM_USER=root
 ATOMCAM_PASS=atomcam2
 
