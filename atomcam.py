@@ -461,7 +461,7 @@ class DetectMeteor():
     親クラスから継承したものにしたい。
     """
 
-    def __init__(self, file_path, mask=None, minLineLength=30, opencl=False):
+    def __init__(self, file_path, mask=None, minLineLength=30, opencl=False, rectangle=False):
         # video device url or movie file path
         self.capture = FileVideoStream(file_path).start()
         self.HEIGHT = int(self.capture.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -472,6 +472,7 @@ class DetectMeteor():
         if self.FPS < 1.0:
             # 正しく入っていない場合があるので、その場合は15固定にする(ATOM Cam限定)。
             self.FPS = 15
+        self.rectangle = rectangle
 
         # file_pathから日付、時刻を取得する。
         # date_element = file_path.split('/')
@@ -559,19 +560,23 @@ class DetectMeteor():
                 try:
                     diff_img = brightest(diff(img_list, self.mask))
                     detect_list = detect(diff_img, self.min_length) 
-                    if detect_list is not None:
-                        obs_time = "{}:{}".format(
-                            self.obs_time, str(count*exposure).zfill(2))
-                        print('{}  A possible meteor was detected.'.format(obs_time))
-                        filename = self.date_dir + self.hour + \
-                            self.minute + str(count*exposure).zfill(2)
-                        path_name = str(Path(output_dir, filename + ".jpg"))
-                        # cv2.imwrite(filename + ".jpg", diff_img)
-                        composite_img = brightest(img_list)
+                    if detect_list is None or detect_list.size == 0:
+                        continue
+                    obs_time = "{}:{}".format(
+                        self.obs_time, str(count*exposure).zfill(2))
+                    print('{}  A possible meteor was detected.'.format(obs_time))
+                    filename = self.date_dir + self.hour + \
+                        self.minute + str(count*exposure).zfill(2)
+                    path_name = str(Path(output_dir, filename + ".jpg"))
+                    path_name2 = str(Path(output_dir, filename + "_canny.jpg"))
+                    # cv2.imwrite(filename + ".jpg", diff_img)
+                    composite_img = brightest(img_list)
+                    if self.rectangle:
                         for d in detect_list:
                             cv2.rectangle(composite_img, (d[0][0],d[0][1]), (d[0][2],d[0][3]), (0, 0, 255), 3) 
-                        cv2.imwrite(path_name, composite_img)
+                    cv2.imwrite(path_name, composite_img)
 
+                    if not self.rectangle:
                         # 検出した動画を保存する。
                         movie_file = str(
                             Path(output_dir, "movie-" + filename + ".mp4"))
@@ -606,13 +611,13 @@ def detect_meteor(args):
         # 1分間の単体のmp4ファイルの処理
         print("#", file_path)
         detecter = DetectMeteor(
-            str(file_path), mask=args.mask, minLineLength=args.min_length)
+            str(file_path), mask=args.mask, minLineLength=args.min_length, rectangle=args.rectangle)
         detecter.meteor(args.exposure, args.output)
     else:
         # 1時間内の一括処理
         for file_path in sorted(Path(data_dir).glob("[0-9][0-9].mp4")):
             print('#', Path(file_path))
-            detecter = DetectMeteor(str(file_path), args.mask)
+            detecter = DetectMeteor(str(file_path), args.mask, rectangle=args.rectangle)
             detecter.meteor(args.exposure, args.output)
 
 
@@ -673,6 +678,8 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--minute', default=None,
                         help="minute in mm (optional)")
     parser.add_argument('-i', '--input', default=None, help='検出対象のTOPディレクトリ名')
+    parser.add_argument(
+        '--rectangle', action='store_true', default=False, help="mark HoghLinesP detect lines")
 
     # 共通オプション
     parser.add_argument('-e', '--exposure', type=int,
