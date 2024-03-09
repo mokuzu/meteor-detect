@@ -26,7 +26,7 @@ import traceback
 sys.stdout.reconfigure(line_buffering=True)
 
 # 自分の環境のATOM CamのIPに修正してください。
-ATOM_CAM_IP = os.environ.get("ATOM_CAM_IP", "192.168.2.110")
+ATOM_CAM_IP = os.environ.get("ATOM_CAM_IP", "192.168.100.13")
 ATOM_CAM_RTSP = "rtsp://{}:8554/unicast".format(ATOM_CAM_IP)
 
 # atomcam_toolsでのデフォルトのユーザアカウントなので、自分の環境に合わせて変更してください。
@@ -210,7 +210,7 @@ def detect(img, min_length):
     canny = cv2.Canny(blur, 100, 200, 3)
 
     # The Hough-transform algo:
-    return cv2.HoughLinesP(canny, 1, np.pi/180, 25, minLineLength=min_length, maxLineGap=5)
+    return canny, cv2.HoughLinesP(canny, 1, np.pi/180, 25, minLineLength=min_length, maxLineGap=5)
 
 
 class AtomCam:
@@ -461,7 +461,7 @@ class DetectMeteor():
     親クラスから継承したものにしたい。
     """
 
-    def __init__(self, file_path, mask=None, minLineLength=30, opencl=False):
+    def __init__(self, file_path, mask=None, minLineLength=30, opencl=False, rectangle=False, cannyedge=False):
         # video device url or movie file path
         self.capture = FileVideoStream(file_path).start()
         self.HEIGHT = int(self.capture.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -472,6 +472,8 @@ class DetectMeteor():
         if self.FPS < 1.0:
             # 正しく入っていない場合があるので、その場合は15固定にする(ATOM Cam限定)。
             self.FPS = 15
+        self.rectangle = rectangle
+        self.cannyedge = cannyedge
 
         # file_pathから日付、時刻を取得する。
         # date_element = file_path.split('/')
@@ -558,17 +560,27 @@ class DetectMeteor():
             if number > 2:
                 try:
                     diff_img = brightest(diff(img_list, self.mask))
-                    if detect(diff_img, self.min_length) is not None:
-                        obs_time = "{}:{}".format(
-                            self.obs_time, str(count*exposure).zfill(2))
-                        print('{}  A possible meteor was detected.'.format(obs_time))
-                        filename = self.date_dir + self.hour + \
-                            self.minute + str(count*exposure).zfill(2)
-                        path_name = str(Path(output_dir, filename + ".jpg"))
-                        # cv2.imwrite(filename + ".jpg", diff_img)
-                        composite_img = brightest(img_list)
-                        cv2.imwrite(path_name, composite_img)
+                    canny, detect_list = detect(diff_img, self.min_length) 
+                    if detect_list is None or detect_list.size == 0:
+                        continue
+                    obs_time = "{}:{}".format(
+                        self.obs_time, str(count*exposure).zfill(2))
+                    print('{}  A possible meteor was detected.'.format(obs_time))
+                    filename = self.date_dir + self.hour + \
+                        self.minute + str(count*exposure).zfill(2)
+                    path_name = str(Path(output_dir, filename + ".jpg"))
+                    path_name2 = str(Path(output_dir, filename + "_canny.jpg"))
+                    # cv2.imwrite(filename + ".jpg", diff_img)
+                    composite_img = brightest(img_list)
+                    if self.rectangle:
+                        for d in detect_list:
+                            cv2.rectangle(composite_img, (d[0][0],d[0][1]), (d[0][2],d[0][3]), (0, 0, 255), 3) 
+                    if self.cannyedge:
+                        cv2.imwrite(path_name2, canny)
+                        
+                    cv2.imwrite(path_name, composite_img)
 
+                    if not self.rectangle or not self.cannyedge:
                         # 検出した動画を保存する。
                         movie_file = str(
                             Path(output_dir, "movie-" + filename + ".mp4"))
@@ -603,13 +615,13 @@ def detect_meteor(args):
         # 1分間の単体のmp4ファイルの処理
         print("#", file_path)
         detecter = DetectMeteor(
-            str(file_path), mask=args.mask, minLineLength=args.min_length)
+            str(file_path), mask=args.mask, minLineLength=args.min_length, rectangle=args.rectangle, cannyedge=args.cannyedge)
         detecter.meteor(args.exposure, args.output)
     else:
         # 1時間内の一括処理
         for file_path in sorted(Path(data_dir).glob("[0-9][0-9].mp4")):
             print('#', Path(file_path))
-            detecter = DetectMeteor(str(file_path), args.mask)
+            detecter = DetectMeteor(str(file_path), args.mask, rectangle=args.rectangle, cannyedge=args.cannyedge)
             detecter.meteor(args.exposure, args.output)
 
 
@@ -670,6 +682,10 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--minute', default=None,
                         help="minute in mm (optional)")
     parser.add_argument('-i', '--input', default=None, help='検出対象のTOPディレクトリ名')
+    parser.add_argument(
+        '--rectangle', action='store_true', default=False, help="mark HoghLinesP detect lines")
+    parser.add_argument(
+        '--cannyedge', action='store_true', default=False, help="mark canny edge")
 
     # 共通オプション
     parser.add_argument('-e', '--exposure', type=int,
