@@ -1,9 +1,20 @@
 # meteor-detect(fork版)
 
 https://github.com/kin-hasegawa　氏のmeteor-detectをforkさせていただいております  
-自身の自宅観測カメラ用に必要な改変を加えているのみです  
-  
-originalはhttps://github.com/kin-hasegawa/meteor-detectです。  
+originalはhttps://github.com/kin-hasegawa/meteor-detectです。 
+
+## 概要
+
+ATOMCamの録画データからの流星自動検出を行います<br/>
+自宅ベランダでのdailyでのデータ蓄積と流星検出結果のデータ化を目指してます。<br/>
+基本的にはfork元の機能を維持して運用上必要な改修を加えています。
+
+## 元リポジトリより追加したオプション
+
+optional arguments:
+  --rectangle       detectメソッドにてHoloLinesPが検知した直線を検知画像上で四角のラインで囲みます。
+  --cannyedge       HoloLinesPの事前にcannyメソッドで抽出したedgeを別の画像として出力します。
+
   
 ---
   
