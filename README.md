@@ -26,7 +26,6 @@ optional arguments:
                         露出時間(second)
   -o OUTPUT, --output OUTPUT
                         検出画像の出力先ディレクトリ名
-  -t TO, --to TO        終了時刻(JST) "hhmm" 形式(ex. 0600)
   --mask MASK           mask image
   --min_length MIN_LENGTH
                         minLineLength of HoghLinesP
