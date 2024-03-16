@@ -9,13 +9,35 @@ ATOMCamの録画データからの流星自動検出を行います<br/>
 自宅ベランダでのdailyでのデータ蓄積と流星検出結果のデータ化を目指してます。<br/>
 基本的にはfork元の機能を維持して運用上必要な改修を加えています。
 
-## 元リポジトリより追加したオプション
+しばらくの間、ストリーミングモードは使用しないので、コードの整理を行い、一旦ストリーミングモードは呼び出さないように改修を加えています。（構造の変更に伴い動作確認していないので）
 
+## 現在利用できるオプション
+
+```
 optional arguments:
+  -n, --no_window       画面非表示
+  -d DATE, --date DATE  Date in 'yyyymmdd' format (JST)
+  -h HOUR, --hour HOUR  Hour in 'hh' format (JST)
+  -m MINUTE, --minute MINUTE
+                        minute in mm (optional)
+  -i INPUT, --input INPUT
+                        検出対象のTOPディレクトリ名
+  -e EXPOSURE, --exposure EXPOSURE
+                        露出時間(second)
+  -o OUTPUT, --output OUTPUT
+                        検出画像の出力先ディレクトリ名
+  -t TO, --to TO        終了時刻(JST) "hhmm" 形式(ex. 0600)
+  --mask MASK           mask image
+  --min_length MIN_LENGTH
+                        minLineLength of HoghLinesP
+  --opencl              Use OpenCL (default: False)
+  -s, --suppress-warning
+                        suppress warning messages
+  --help                show this help message and exit
   --rectangle       detectメソッドにてHoloLinesPが検知した直線を検知画像上で四角のラインで囲みます。
   --cannyedge       HoloLinesPの事前にcannyメソッドで抽出したedgeを別の画像として出力します。
+```
 
-  
 ---
   
 ATOMCamのストリーミング及びデータからの流星を自動検出<br>
