@@ -112,15 +112,23 @@ def detect(img, min_length):
 
 if __name__ == '__main__':
 
-    from atomcam_streaming import streaming_thread
+    #from atomcam_streaming import streaming_thread
     from atomcam_videofile import detect_meteor
 
     parser = argparse.ArgumentParser(add_help=False)
 
     # ストリーミングモードのオプション
-    parser.add_argument('-u', '--url', default=None,
-                        help='RTSPのURL、または動画(MP4)ファイル')
-    parser.add_argument('-n', '--no_window', action='store_true', help='画面非表示')
+    #parser.add_argument('-u', '--url', default=None,
+    #                    help='RTSPのURL、または動画(MP4)ファイル')
+    #parser.add_argument('-n', '--no_window', action='store_true', help='画面非表示')
+    # threadモード(default)
+    #parser.add_argument('--thread', default=True,
+    #                    action='store_true', help='スレッド版(default)')
+    # 以下のオプションはatomcam_toolsを必要とする。
+    #parser.add_argument(
+    #    '--atomcam_tools', action='store_true', help='atomcam_toolsを使う場合に指定する。')
+    #parser.add_argument(
+    #    '-c', '--clock', action='store_true', help='カメラの時刻チェック(atomcam_tools必要)')
 
     # 以下はATOM Cam形式のディレクトリからデータを読む場合のオプション
     parser.add_argument('-d', '--date', default=None,
@@ -153,18 +161,8 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--suppress-warning',
                         action='store_true', help='suppress warning messages')
 
-    # threadモード(default)
-    parser.add_argument('--thread', default=True,
-                        action='store_true', help='スレッド版(default)')
-
     parser.add_argument('--help', action='help',
                         help='show this help message and exit')
-
-    # 以下のオプションはatomcam_toolsを必要とする。
-    parser.add_argument(
-        '--atomcam_tools', action='store_true', help='atomcam_toolsを使う場合に指定する。')
-    parser.add_argument(
-        '-c', '--clock', action='store_true', help='カメラの時刻チェック(atomcam_tools必要)')
 
     args = parser.parse_args()
 
@@ -173,9 +171,13 @@ if __name__ == '__main__':
         fd = os.open(os.devnull, os.O_WRONLY)
         os.dup2(fd, 2)
 
-    if args.date:
+    if not args.date:
+        print("atomcam形式パスで保存されたdate指定は必須です")
+    detect_meteor(args)
+
+    #if args.date:
         # 日付がある場合はファイル(ATOMCam形式のファイル)から流星検出
-        detect_meteor(args)
-    else:
+    #    detect_meteor(args)
+    #else:
         # ストリーミング/動画(MP4)の再生、流星検出
-        streaming_thread(args)
+    #    streaming_thread(args)
