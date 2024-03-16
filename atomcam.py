@@ -129,6 +129,8 @@ if __name__ == '__main__':
     #    '--atomcam_tools', action='store_true', help='atomcam_toolsを使う場合に指定する。')
     #parser.add_argument(
     #    '-c', '--clock', action='store_true', help='カメラの時刻チェック(atomcam_tools必要)')
+    #parser.add_argument('-t', '--to', default="0600",
+    #                    help='終了時刻(JST) "hhmm" 形式(ex. 0600)')
 
     # 以下はATOM Cam形式のディレクトリからデータを読む場合のオプション
     parser.add_argument('-d', '--date', default=None,
@@ -147,8 +149,6 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--exposure', type=int,
                         default=1, help='露出時間(second)')
     parser.add_argument('-o', '--output', default=None, help='検出画像の出力先ディレクトリ名')
-    parser.add_argument('-t', '--to', default="0600",
-                        help='終了時刻(JST) "hhmm" 形式(ex. 0600)')
 
     parser.add_argument('--mask', default=None, help="mask image")
     parser.add_argument('--min_length', type=int, default=30,
@@ -171,8 +171,6 @@ if __name__ == '__main__':
         fd = os.open(os.devnull, os.O_WRONLY)
         os.dup2(fd, 2)
 
-    if not args.date:
-        print("atomcam形式パスで保存されたdate指定は必須です")
     detect_meteor(args)
 
     #if args.date:

@@ -155,6 +155,10 @@ def detect_meteor(args):
     else:
         input_dir = Path('.')
 
+    if not args.date:
+        print("atomcam保存形式で保存された動画ファイルの日付指定は必須です")
+        return
+
     data_dir = Path(input_dir, args.date)
     if args.hour:
         # 時刻(hour)の指定がある場合
