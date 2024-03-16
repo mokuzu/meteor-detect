@@ -1,11 +1,90 @@
 #!/usr/bin/env python
 
+import datetime
 from pathlib import Path
 import argparse
+import telnetlib
 import cv2
+from atomcam import ATOM_CAM_IP
 
-from atomcam import DetectMeteor, ATOM_CAM_IP, ATOM_CAM_USER, ATOM_CAM_PASS
-from atomcam import check_clock, set_clock
+from atomcam_videofile import DetectMeteor
+
+# atomcam_toolsでのデフォルトのユーザアカウントなので、自分の環境に合わせて変更してください。
+ATOM_CAM_USER = "root"
+ATOM_CAM_PASS = "atomcam2"
+
+class AtomTelnet():
+    '''
+    ATOM Camにtelnet接続し、コマンドを実行するクラス
+    '''
+
+    def __init__(self, ip_address=ATOM_CAM_IP):
+        """AtomTelnetのコンストラクタ
+
+        Args:
+          ip_address: Telnet接続先のIPアドレス
+        """
+        self.tn = telnetlib.Telnet(ip_address)
+        self.tn.read_until(b"login: ")
+        self.tn.write(ATOM_CAM_USER.encode('ascii') + b"\n")
+        self.tn.read_until(b"Password: ")
+        self.tn.write(ATOM_CAM_PASS.encode('ascii') + b"\n")
+
+        self.tn.read_until(b"# ")
+
+    def exec(self, command):
+        """Telnet経由でコマンドを実行する。
+
+        Args:
+          command : 実行するコマンド(ex. "ls")
+
+        Returns:
+          コマンド実行結果文字列。1行のみ。
+        """
+        self.tn.write(command.encode('utf-8') + b'\n')
+        ret = self.tn.read_until(b"# ").decode('utf-8').split("\r\n")[1]
+        return ret
+
+    def exit(self):
+        self.tn.write("exit".encode('utf-8') + b"\n")
+
+    def __del__(self):
+        self.exit()
+
+
+def set_clock():
+    """ATOM Camのクロックとホスト側のクロックに合わせる。
+    """
+    tn = AtomTelnet()
+    # utc_now = datetime.now(timezone.utc)
+    jst_now = datetime.now()
+    set_command = 'date -s "{}"'.format(jst_now.strftime("%Y-%m-%d %H:%M:%S"))
+    print(set_command)
+    tn.exec(set_command)
+
+
+def check_clock():
+    """ATOM Camのクロックとホスト側のクロックの比較。
+    """
+    tn = AtomTelnet()
+    atom_date = tn.exec('date')
+    '''
+    utc_now = datetime.now(timezone.utc)
+    atom_now = datetime.strptime(atom_date, "%a %b %d %H:%M:%S %Z %Y")
+    atom_now = atom_now.replace(tzinfo=timezone.utc)
+    '''
+    jst_now = datetime.now()
+    atom_now = datetime.strptime(atom_date, "%a %b %d %H:%M:%S %Z %Y")
+
+    dt = atom_now - jst_now
+    if dt.days < 0:
+        delta = -(86400.0 - (dt.seconds + dt.microseconds/1e6))
+    else:
+        delta = dt.seconds + dt.microseconds/1e6
+
+    print("# ATOM Cam =", atom_now)
+    print("# HOST PC  =", jst_now)
+    print("# ATOM Cam - Host PC = {:.3f} sec".format(delta))
 
 
 def make_ftpcmd(meteor_list, directory):
