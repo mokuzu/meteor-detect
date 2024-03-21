@@ -124,17 +124,20 @@ class DetectMeteor():
                         self.minute + str(count*exposure).zfill(2)
                     path_name = str(Path(output_dir, filename + ".jpg"))
                     path_name2 = str(Path(output_dir, filename + "_canny.jpg"))
-                    # cv2.imwrite(filename + ".jpg", diff_img)
+                    path_name3 = str(Path(output_dir, filename + "_rect.jpg"))
+                    # cv2.imwrite(filename + "_diff.jpg", diff_img)
                     composite_img = brightest(img_list)
-                    if self.rectangle:
-                        for d in detect_list:
-                            cv2.rectangle(composite_img, (d[0][0],d[0][1]), (d[0][2],d[0][3]), (0, 0, 255), 3) 
-                    if self.cannyedge:
-                        cv2.imwrite(path_name2, canny)
                         
                     cv2.imwrite(path_name, composite_img)
 
-                    if not self.rectangle or not self.cannyedge:
+                    if self.rectangle:
+                        for d in detect_list:
+                            cv2.rectangle(composite_img, (d[0][0],d[0][1]), (d[0][2],d[0][3]), (0, 0, 255), 3) 
+                        cv2.imwrite(path_name3, composite_img)
+                    if self.cannyedge:
+                        cv2.imwrite(path_name2, canny)
+
+                    if not self.cannyedge:
                         # 検出した動画を保存する。
                         movie_file = str(
                             Path(output_dir, "movie-" + filename + ".mp4"))
