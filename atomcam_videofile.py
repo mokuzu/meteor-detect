@@ -9,6 +9,22 @@ import numpy as np
 from atomcam import brightest, detect, diff
 
 
+
+def calculate_moving_average(data, window_size):
+    moving_averages = []
+    
+    # データ長がウィンドウサイズより小さい場合は処理不可なのでエラーを返す
+    if len(data) < window_size:
+        raise ValueError("Data length must be greater than or equal to window size.")
+        
+    # 移動平均を計算
+    for i in range(len(data) - window_size + 1):
+        window = data[i:i+window_size]
+        average = np.mean(window)
+        moving_averages.append(average)
+        
+    return moving_averages
+
 class DetectMeteor():
     """
     ATOMCam 動画ファイル(MP4)からの流星の検出
@@ -59,6 +75,7 @@ class DetectMeteor():
                     zero, (1390, 1010), (1920, 1080), (255, 255, 255), -1)
 
         self.min_length = minLineLength
+        self.brightness_values = []
 
     def save_movie(self, img_list, pathname):
         """
@@ -76,6 +93,11 @@ class DetectMeteor():
             video.write(img)
 
         video.release()
+
+    def calculate_brightness(self, image):
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        average_brightness = cv2.mean(gray_image)[0]
+        return average_brightness
 
     def meteor(self, exposure=1, output=None):
         """流星の検出
@@ -105,6 +127,8 @@ class DetectMeteor():
                     continue
 
                 img_list.append(frame)
+
+            self.brightness_values.append(self.calculate_brightness(img_list[0]))
 
             # 画像のコンポジット
             number = len(img_list)
@@ -143,6 +167,23 @@ class DetectMeteor():
                 except Exception as e:
                     # print(traceback.format_exc(), file=sys.stderr)
                     print(e, file=sys.stderr)
+    
+    def next_detect_file_or_terminate(self):
+        BRIGHTNESS_THRESHOLD = 103
+        MOVING_AVERAGE_WINDOW = 10
+        SKIP_MINUTES = 15
+        moving_avg = calculate_moving_average(self.brightness_values, MOVING_AVERAGE_WINDOW)
+        if sum(1 for x in moving_avg if x >= BRIGHTNESS_THRESHOLD) > len(moving_avg)/2:
+            print(f"{self.obs_time} Brightness has exceeded the threshold.")
+            next = None
+            if int(self.hour) > 12:
+                if int(self.minute) < 60-SKIP_MINUTES:
+                    next = int(self.minute) + SKIP_MINUTES 
+                    print("skip next file {:02}.mp4".format(next))
+        else:
+            next = int(self.minute) + 1
+        return "{:02}".format(next) if next else next
+
 
 
 def detect_meteor(args):
@@ -177,7 +218,14 @@ def detect_meteor(args):
         detecter.meteor(args.exposure, args.output)
     else:
         # 1時間内の一括処理
-        for file_path in sorted(Path(data_dir).glob("[0-9][0-9].mp4")):
+        file_list = sorted(Path(data_dir).glob("[0-9][0-9].mp4"))
+        next = os.path.basename(file_list[0])[:2]
+        for file_path in file_list:
+            if f"{next}.mp4" != os.path.basename(file_path):
+                continue
             print('#', Path(file_path))
             detecter = DetectMeteor(str(file_path), args.mask, rectangle=args.rectangle, cannyedge=args.cannyedge)
             detecter.meteor(args.exposure, args.output)
+            next = detecter.next_detect_file_or_terminate()
+            if next is None:
+                break
