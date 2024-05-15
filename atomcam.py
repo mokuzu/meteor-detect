@@ -144,6 +144,12 @@ if __name__ == '__main__':
         '--rectangle', action='store_true', default=False, help="mark HoghLinesP detect lines")
     parser.add_argument(
         '--cannyedge', action='store_true', default=False, help="mark canny edge")
+    parser.add_argument(
+        '--verbose', action='store_true', default=False, help="detect brightness verbose")
+    parser.add_argument(
+        '--brightness_threshold', default=None, help="detect brightness threshold")
+    parser.add_argument(
+        '--moving_average_window', default=None, help="detect brightness moving average window 1-6")
 
     # 共通オプション
     parser.add_argument('-e', '--exposure', type=int,
