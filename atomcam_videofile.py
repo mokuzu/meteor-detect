@@ -222,6 +222,9 @@ def detect_meteor(args):
     else:
         # 1時間内の一括処理
         file_list = sorted(Path(data_dir).glob("[0-9][0-9].mp4"))
+        if len(file_list) == 0:
+            print("No mp4 files in {}".format(data_dir))
+            return
         next = os.path.basename(file_list[0])[:2]
         for file_path in file_list:
             if f"{next}.mp4" != os.path.basename(file_path):
